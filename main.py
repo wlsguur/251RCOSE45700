@@ -62,6 +62,14 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+            
+            
+            
+    obstacles = []
+    for desk in desks:
+        obstacles.append(desk.rect)
+        for seat in desk.seats:
+            obstacles.append(seat.rect)
 
     for ai in ai_agents:
         obstacles.append(ai.rect)
