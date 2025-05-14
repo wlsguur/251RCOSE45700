@@ -41,9 +41,9 @@ ai_agents = []
 #     ai_agents.append(ai)
 
 # wandering AI 3명 추가
-wandering_ai_spawn_zone = [(50, 50), (700, 500), (400, 100)]
+wandering_ai_spawn_zone = [(20, 50), (300, 30), (400, 100)]
 for x, y in wandering_ai_spawn_zone:
-    ai = AIAgent(x, y)
+    ai = AIAgent(x, y,image_path='asset/img/ai_agent.png')
     ai.set_wandering()
     ai_agents.append(ai)
 

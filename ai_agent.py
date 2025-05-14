@@ -4,14 +4,27 @@ import random
 class AIAgent:
     directions = ["up", "down", "left", "right"]
 
-    def __init__(self, x, y, width=30, height=30, color=(100, 100, 255)):
-        self.rect = pygame.Rect(x, y, width, height)
-        self.color = color
+    def __init__(self, x, y, width=30, height=30, color=(100, 100, 255),image_path=None):
+        # 이미지 로드 및 크기 조정
+        if image_path:
+            raw_img = pygame.image.load(image_path).convert_alpha()
+            self.image = pygame.transform.scale(raw_img, (width, height))
+            
+        else:
+            self.image = None
+            self.color = color
+
+        # rect 생성 (이미지 있으면 이미지 크기에 맞춰 center, 없으면 x,y 기준)
+        if self.image:
+            self.rect = self.image.get_rect(center=(x, y))
+        else:
+            self.rect = pygame.Rect(x, y, width, height)
+
         self.state = "wandering"  # seated, wandering, going_to_seat
         self.speed = 2
         self.target_seat = None
         self.paused_due_to_collision = False
-        self.direction = random.choice(self.directions)  # 현재 진행 방향
+        self.direction = random.choice(self.directions)
 
     def set_seated(self, seat):
         self.rect.center = seat.rect.center
@@ -103,4 +116,9 @@ class AIAgent:
                 self.rect.center = self.target_seat.rect.center
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+        if hasattr(self, "image") and self.image:
+            # 이미지가 있으면 이미지로 그리기
+            screen.blit(self.image, self.rect)
+        else:
+            # 없으면 색깔 사각형으로 폴백
+            pygame.draw.rect(screen, self.color, self.rect)
