@@ -12,7 +12,7 @@ pygame.display.set_caption("Seat Game - 앉기 기능")
 clock = pygame.time.Clock()
 
 # 플레이어 초기 위치 (화면 가운데)
-player = Player(400, 300)
+player = Player(400, 300,width=40, height=40, image_path="asset/img/boy_player.png")
 
 # 책상들 생성 (화면을 4분할 후 각 사분면에 배치)
 desks = []
@@ -35,15 +35,15 @@ for desk in desks:
 
 # 모든 좌석에 AI 배치
 ai_agents = []
-for seat in all_seats:
-    ai = AIAgent(seat.rect.x, seat.rect.y)
-    ai.set_seated(seat)
-    ai_agents.append(ai)
+# for seat in all_seats:
+#     ai = AIAgent(seat.rect.x, seat.rect.y)
+#     ai.set_seated(seat)
+#     ai_agents.append(ai)
 
 # wandering AI 3명 추가
-wandering_ai_spawn_zone = [(50, 50), (700, 500), (400, 100)]
+wandering_ai_spawn_zone = [(20, 50), (300, 30), (400, 100)]
 for x, y in wandering_ai_spawn_zone:
-    ai = AIAgent(x, y)
+    ai = AIAgent(x, y,image_path='asset/img/ai_agent.png')
     ai.set_wandering()
     ai_agents.append(ai)
 
@@ -62,6 +62,11 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+    obstacles = []
+    for desk in desks:
+        obstacles.append(desk.rect)
+        for seat in desk.seats:
+            obstacles.append(seat.rect)
 
     for ai in ai_agents:
         obstacles.append(ai.rect)
@@ -88,6 +93,9 @@ while running:
     keys = pygame.key.get_pressed()
     if sit_target and keys[pygame.K_SPACE] and not player.seated:
         player.sit(sit_target)
+    
+    elif sit_target and keys[pygame.K_SPACE] and player.seated:
+        player.stand()
 
     # 그리기
     for desk in desks:
@@ -98,7 +106,7 @@ while running:
 
     # 안내 메시지
     if sit_target and not player.seated:
-        text = font.render("앉으려면 SPACE 키를 누르세요", True, (255, 255, 255))
+        text = font.render("Press Space Bar to sit down", True, (255, 255, 255))
         screen.blit(text, (screen.get_width() // 2 - 100, 20))
 
     pygame.display.flip()
