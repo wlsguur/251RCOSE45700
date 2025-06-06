@@ -20,15 +20,15 @@ class Player:
         self.speed = speed
         self.seated = False
         self.current_seat = None
+        self.spawn_center = None
 
     def handle_input(self, obstacles, screen_width=800, screen_height=600):
+        keys = pygame.key.get_pressed()
         if self.seated:
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_SPACE]:
+            if keys[pygame.K_ESCAPE]:
                 self.stand()
             return
 
-        keys = pygame.key.get_pressed()
         dx = (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * self.speed
         dy = (keys[pygame.K_DOWN]  - keys[pygame.K_UP])   * self.speed
 
@@ -45,6 +45,7 @@ class Player:
             pygame.draw.rect(screen, self.color, self.rect)
 
     def sit(self, seat):
+        self.spawn_center = seat.spawn_pos
         self.rect.center = seat.rect.center
         self.seated = True
         self.current_seat = seat
@@ -55,3 +56,4 @@ class Player:
             self.current_seat.leave()
         self.seated = False
         self.current_seat = None
+        self.rect.center = self.spawn_center
