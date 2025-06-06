@@ -1,14 +1,22 @@
-# main.py (좌석 생성 + 플레이어 앉기까지 구현)
 import pygame
 import random
 from desk import Desk
 from seat import Seat
 from player import Player
 from ai_agent import AIAgent
+import time
+from math import dist
+
+def find_furthest_seated_ai(ai_agents, player_rect):
+    seated_ais = [ai for ai in ai_agents if ai.state == "seated"]
+    if not seated_ais:
+        return None
+    return max(seated_ais, key=lambda ai: dist(ai.rect.center, player_rect.center))
+
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("Seat Game - 앉기 기능")
+pygame.display.set_caption("ToHak")
 clock = pygame.time.Clock()
 
 # 플레이어 초기 위치 (화면 가운데)
@@ -35,15 +43,15 @@ for desk in desks:
 
 # 모든 좌석에 AI 배치
 ai_agents = []
-# for seat in all_seats:
-#     ai = AIAgent(seat.rect.x, seat.rect.y)
-#     ai.set_seated(seat)
-#     ai_agents.append(ai)
+for seat in all_seats:
+    ai = AIAgent(seat.rect.x, seat.rect.y, image_path='asset/img/ai_agent.png')
+    ai.set_seated(seat)
+    ai_agents.append(ai)
 
 # wandering AI 3명 추가
 wandering_ai_spawn_zone = [(20, 50), (300, 30), (400, 100)]
 for x, y in wandering_ai_spawn_zone:
-    ai = AIAgent(x, y,image_path='asset/img/ai_agent.png')
+    ai = AIAgent(x, y, image_path='asset/img/ai_agent.png')
     ai.set_wandering()
     ai_agents.append(ai)
 
@@ -53,9 +61,10 @@ for desk in desks:
     for seat in desk.seats:
         obstacles.append(seat.rect)
 
-# 게임 루프
 running = True
 font = pygame.font.SysFont(None, 24)
+
+last_despawn_time = time.time()
 
 while running:
     screen.fill((30, 30, 30))
@@ -70,7 +79,19 @@ while running:
 
     for ai in ai_agents:
         obstacles.append(ai.rect)
+    
+    empty_seats = [seat for seat in all_seats if not seat.occupied]
 
+    current_time = time.time()
+
+    if len(empty_seats) == 0:
+        if current_time - last_despawn_time >= 5:
+            ai_to_remove = find_furthest_seated_ai(ai_agents, player.rect)
+            if ai_to_remove:
+                ai_to_remove.despawn(screen.get_width(), screen.get_height())
+            last_despawn_time = current_time
+    else:
+        last_despawn_time = current_time
 
     # input 처리 시 obstacles 전달
     for ai in ai_agents:
@@ -94,9 +115,6 @@ while running:
     if sit_target and keys[pygame.K_SPACE] and not player.seated:
         player.sit(sit_target)
     
-    elif sit_target and keys[pygame.K_SPACE] and player.seated:
-        player.stand()
-
     # 그리기
     for desk in desks:
         desk.draw(screen)

@@ -29,6 +29,7 @@ class AIAgent:
     def set_seated(self, seat):
         self.rect.center = seat.rect.center
         self.state = "seated"
+        self.target_seat = seat
         seat.occupied = True
 
     def set_wandering(self):
@@ -49,6 +50,31 @@ class AIAgent:
             "right": ["up", "down"]
         }
         self.direction = random.choice(turn_map[self.direction])
+    
+    def despawn(self, screen_width=800, screen_height=600):
+        self.state = "leaving"
+        self.target_seat.leave()
+        self.target_seat = None
+
+        x, y = self.rect.center
+
+        distances = {
+            "left": x,
+            "right": screen_width - x,
+            "top": y,
+            "bottom": screen_height - y
+        }
+
+        closest_dir = min(distances, key=distances.get)
+
+        if closest_dir == "left":
+            self.leave_target = (-40, y)
+        elif closest_dir == "right":
+            self.leave_target = (screen_width + 40, y)
+        elif closest_dir == "top":
+            self.leave_target = (x, -40)
+        elif closest_dir == "bottom":
+            self.leave_target = (x, screen_height + 40)
 
 
     def update(self, player_rect, obstacles, screen_width, screen_height):
@@ -90,7 +116,21 @@ class AIAgent:
                 self.turn_left_or_right()
             else:
                 self.rect = next_rect
+        
+        elif self.state == "leaving":
+            if self.leave_target:
+                dx = self.leave_target[0] - self.rect.centerx
+                dy = self.leave_target[1] - self.rect.centery
+                distance = max(1, (dx**2 + dy**2)**0.5)
+                move_x = self.speed * dx / distance
+                move_y = self.speed * dy / distance
+                self.rect.centerx += int(move_x)
+                self.rect.centery += int(move_y)
 
+                if (self.rect.right < 0 or self.rect.left > screen_width or
+                    self.rect.bottom < 0 or self.rect.top > screen_height):
+                    self.offscreen = True
+            return
 
         elif self.state == "going_to_seat" and self.target_seat:
             dx = self.target_seat.rect.centerx - self.rect.centerx
@@ -117,8 +157,6 @@ class AIAgent:
 
     def draw(self, screen):
         if hasattr(self, "image") and self.image:
-            # 이미지가 있으면 이미지로 그리기
             screen.blit(self.image, self.rect)
         else:
-            # 없으면 색깔 사각형으로 폴백
             pygame.draw.rect(screen, self.color, self.rect)
