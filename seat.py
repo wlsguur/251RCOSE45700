@@ -4,7 +4,6 @@ class Seat(pygame.sprite.Sprite):
     def __init__(self, x: int, y: int, width: int = 20, height: int = 20, spawn_pos: tuple = None):
         super().__init__()
 
-        # 이미지 불러오고 원하는 크기로 맞추기
         raw_img = pygame.image.load("chair.png")
         self.image = pygame.transform.smoothscale(raw_img, (width, height))
         self.rect = self.image.get_rect(topleft=(x, y))

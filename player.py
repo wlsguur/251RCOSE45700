@@ -2,16 +2,13 @@ import pygame
 
 class Player:
     def __init__(self, x, y, width=30, height=30, image_path=None, speed=4):
-        # 이미지 로드 및 크기 조정
         if image_path:
             self.image = pygame.image.load(image_path).convert_alpha()
             self.image = pygame.transform.scale(self.image, (width, height))
         else:
-            # 이미지가 없으면 기본 색상 사각형
             self.image = None
             self.color = (0, 200, 0)
 
-        # rect는 이미지 크기에 맞춰 생성
         if self.image:
             self.rect = self.image.get_rect(center=(x, y))
         else:

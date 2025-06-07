@@ -5,52 +5,24 @@ from seat import Seat
 from player import Player
 from ai_agent import AIAgent
 import time
-from math import dist, hypot
-
-def get_ai_to_leave(ai_agents, player_rect):
-    px, py = player_rect.center
-
-    wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
-    if not wandering_ais:
-        return None
-
-    avg_x = sum(ai.rect.centerx for ai in wandering_ais) / len(wandering_ais)
-    avg_y = sum(ai.rect.centery for ai in wandering_ais) / len(wandering_ais)
-
-    mid_x = (px + avg_x) / 2
-    mid_y = (py + avg_y) / 2
-
-    seated_ais = [ai for ai in ai_agents if ai.state == "seated"]
-    if not seated_ais:
-        return None
-
-    def dist_to_mid(ai):
-        dx = ai.rect.centerx - mid_x
-        dy = ai.rect.centery - mid_y
-        return hypot(dx, dy)
-
-    return min(seated_ais, key=dist_to_mid)
-
-
+from utils import get_ai_to_leave
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("ToHak")
 clock = pygame.time.Clock()
 
-# 플레이어 초기 위치 (화면 가운데)
 player = Player(400, 300,width=40, height=40, image_path="asset/img/boy_player.png")
 
-# 책상들 생성 (화면을 4분할 후 각 사분면에 배치)
 desks = []
 desk_w, desk_h = 230, 110
 margin_x, margin_y = 90, 100
 
 positions = [
-    (margin_x, margin_y),                         # 좌상
-    (800 - margin_x - desk_w, margin_y),          # 우상
-    (margin_x, 600 - margin_y - desk_h),          # 좌하
-    (800 - margin_x - desk_w, 600 - margin_y - desk_h)  # 우하
+    (margin_x, margin_y),
+    (800 - margin_x - desk_w, margin_y),
+    (margin_x, 600 - margin_y - desk_h),
+    (800 - margin_x - desk_w, 600 - margin_y - desk_h)
 ]
 
 for x, y in positions:
@@ -107,7 +79,7 @@ while running:
         if current_time - last_despawn_time >= 5:
             ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
             if ai_to_leave:
-                ai_to_leave.despawn(screen.get_width(), screen.get_height())
+                ai_to_leave.despawn(obstacles, screen.get_width(), screen.get_height())
             last_despawn_time = current_time
     else:
         last_despawn_time = current_time
@@ -118,6 +90,7 @@ while running:
 
     player.handle_input(obstacles, screen.get_width(), screen.get_height())
 
+    ai_agents = [ai for ai in ai_agents if not ai.offscreen]
 
     # 플레이어와 좌석 거리 계산 → 앉기 가능 좌석 탐색
     sit_target = None
@@ -134,14 +107,12 @@ while running:
     if sit_target and keys[pygame.K_SPACE] and not player.seated:
         player.sit(sit_target)
     
-    # 그리기
     for desk in desks:
         desk.draw(screen)
     for ai in ai_agents:
         ai.draw(screen)
     player.draw(screen)
 
-    # 안내 메시지
     if sit_target and not player.seated:
         text = font.render("Press Space Bar to sit down", True, (255, 255, 255))
         screen.blit(text, (screen.get_width() // 2 - 100, 20))

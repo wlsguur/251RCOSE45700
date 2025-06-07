@@ -1,30 +1,30 @@
 import pygame
 import random
+from utils import find_path_bfs, euclidean_dist
 
 class AIAgent:
     directions = ["up", "down", "left", "right"]
 
-    def __init__(self, x, y, width=30, height=30, color=(100, 100, 255),image_path=None):
-        # 이미지 로드 및 크기 조정
+    def __init__(self, x, y, width=30, height=30, color=(100, 100, 255), image_path=None):
         if image_path:
             raw_img = pygame.image.load(image_path).convert_alpha()
             self.image = pygame.transform.scale(raw_img, (width, height))
-            
         else:
             self.image = None
             self.color = color
 
-        # rect 생성 (이미지 있으면 이미지 크기에 맞춰 center, 없으면 x,y 기준)
-        if self.image:
-            self.rect = self.image.get_rect(center=(x, y))
-        else:
-            self.rect = pygame.Rect(x, y, width, height)
+        self.rect = self.image.get_rect(center=(x, y)) if self.image else pygame.Rect(x, y, width, height)
 
-        self.state = "wandering"  # seated, wandering, going_to_seat
+        self.state = "wandering"  # wandering, going_to_seat, seated, leaving
         self.speed = 2
+        self.direction = random.choice(self.directions)
         self.target_seat = None
         self.paused_due_to_collision = False
-        self.direction = random.choice(self.directions)
+
+        self.path = []
+        self.path_index = 0
+        self.leave_target = None
+        self.offscreen = False
 
     def set_seated(self, seat):
         self.rect.center = seat.rect.center
@@ -37,11 +37,39 @@ class AIAgent:
         self.target_seat = None
         self.direction = random.choice(self.directions)
 
-    def go_to_seat(self, seat):
+    def go_to_seat(self, seat, obstacles, screen_size=(800, 600)):
         self.state = "going_to_seat"
         self.target_seat = seat
-        self.target_seat.occupied = True  # Reserve the seat
-    
+        self.target_seat.occupied = True  # 예약
+        self.path = find_path_bfs(self.rect.center, seat.rect.center, obstacles,
+                                  screen_width=screen_size[0], screen_height=screen_size[1])
+        self.path_index = 0
+
+    def despawn(self, obstacles, screen_width=800, screen_height=600):
+        self.state = "leaving"
+        self.target_seat.leave()
+        self.target_seat = None
+
+        x, y = self.rect.center
+
+        margin = 10
+        targets = [
+            (margin, y),
+            (screen_width - margin, y),
+            (x, margin),
+            (x, screen_height - margin)
+        ]
+        target = min(targets, key=lambda p: euclidean_dist((x, y), p))
+        obstacles = [ob for ob in obstacles if not self.rect.colliderect(ob)]
+        path = find_path_bfs(self.rect.center, target, obstacles, 
+                             screen_width=screen_width, screen_height=screen_height)
+
+        if path:
+            self.path = path
+            self.path_index = 0
+        else:
+            self.offscreen = True
+
     def turn_left_or_right(self):
         turn_map = {
             "up": ["left", "right"],
@@ -50,36 +78,34 @@ class AIAgent:
             "right": ["up", "down"]
         }
         self.direction = random.choice(turn_map[self.direction])
-    
-    def despawn(self, screen_width=800, screen_height=600):
-        self.state = "leaving"
-        self.target_seat.leave()
-        self.target_seat = None
 
-        x, y = self.rect.center
+    # 이동 로직
+    def _move(self, dx, dy, obstacles, target=None):
+        next_rect = self.rect.move(dx, dy)
+        if not any(next_rect.colliderect(ob) for ob in obstacles if ob != (target.rect if target else self.rect)):
+            self.rect = next_rect
+            return True
+        return False
 
-        distances = {
-            "left": x,
-            "right": screen_width - x,
-            "top": y,
-            "bottom": screen_height - y
-        }
+    def _wander(self, obstacles, screen_width, screen_height):
+        if random.random() < 0.01:
+            self.direction = random.choice(self.directions)
 
-        closest_dir = min(distances, key=distances.get)
+        dx = dy = 0
+        if self.direction == "left": dx = -self.speed
+        elif self.direction == "right": dx = self.speed
+        elif self.direction == "up": dy = -self.speed
+        elif self.direction == "down": dy = self.speed
 
-        if closest_dir == "left":
-            self.leave_target = (-40, y)
-        elif closest_dir == "right":
-            self.leave_target = (screen_width + 40, y)
-        elif closest_dir == "top":
-            self.leave_target = (x, -40)
-        elif closest_dir == "bottom":
-            self.leave_target = (x, screen_height + 40)
-
+        next_rect = self.rect.move(dx, dy)
+        if (next_rect.left < 0 or next_rect.right > screen_width or
+            next_rect.top < 0 or next_rect.bottom > screen_height or
+            any(next_rect.colliderect(ob) for ob in obstacles if ob != self.rect)):
+            self.turn_left_or_right()
+        else:
+            self.rect = next_rect
 
     def update(self, player_rect, obstacles, screen_width, screen_height):
-        safe_obstacles = [o for o in obstacles if o != self.rect]
-        # import pdb; pdb.set_trace()
         if self.state == "seated":
             return
 
@@ -93,68 +119,24 @@ class AIAgent:
             self.paused_due_to_collision = True
             return
 
-        if self.state == "wandering":
-            if random.random() < 0.01:
-                self.direction = random.choice(self.directions)
-
-            dx = dy = 0
-            if self.direction == "left":
-                dx = -self.speed
-            elif self.direction == "right":
-                dx = self.speed
-            elif self.direction == "up":
-                dy = -self.speed
+        if self.state in ["going_to_seat", "leaving"] and self.path:
+            if self.path_index < len(self.path):
+                next_pos = self.path[self.path_index]
+                self.rect.center = next_pos
+                self.path_index += 1
             else:
-                dy = self.speed
-
-            next_rect = self.rect.move(dx, dy)
-            if (next_rect.left < 0 or next_rect.right > screen_width or
-                next_rect.top < 0 or next_rect.bottom > screen_height or
-                any(next_rect.colliderect(o) for o in obstacles if o != self.rect)):
-                self.turn_left_or_right()
-            else:
-                self.rect = next_rect
-        
-        elif self.state == "leaving":
-            if self.leave_target:
-                dx = self.leave_target[0] - self.rect.centerx
-                dy = self.leave_target[1] - self.rect.centery
-                distance = max(1, (dx**2 + dy**2)**0.5)
-                move_x = self.speed * dx / distance
-                move_y = self.speed * dy / distance
-                self.rect.centerx += int(move_x)
-                self.rect.centery += int(move_y)
-
-                if (self.rect.right < 0 or self.rect.left > screen_width or
-                    self.rect.bottom < 0 or self.rect.top > screen_height):
+                if self.state == "going_to_seat":
+                    self.state = "seated"
+                    self.rect.center = self.target_seat.rect.center
+                elif self.state == "leaving":
                     self.offscreen = True
             return
 
-        elif self.state == "going_to_seat" and self.target_seat:
-            dx = self.target_seat.rect.centerx - self.rect.centerx
-            dy = self.target_seat.rect.centery - self.rect.centery
-
-            # 선택된 축 중 하나만 이동 (x 또는 y 중 큰 차이 우선)
-            if abs(dx) > abs(dy):
-                move_x = self.speed if dx > 0 else -self.speed
-                move_y = 0
-                self.direction = "right" if dx > 0 else "left"
-            else:
-                move_y = self.speed if dy > 0 else -self.speed
-                move_x = 0
-                self.direction = "down" if dy > 0 else "up"
-
-            next_rect = self.rect.move(move_x, move_y)
-
-            if not any(next_rect.colliderect(o) for o in safe_obstacles if o != self.target_seat.rect):
-                self.rect = next_rect
-
-            if self.rect.colliderect(self.target_seat.rect):
-                self.state = "seated"
-                self.rect.center = self.target_seat.rect.center
+        if self.state == "wandering":
+            self._wander(obstacles, screen_width, screen_height)
 
     def draw(self, screen):
-        if hasattr(self, "image") and self.image:
+        if self.image:
             screen.blit(self.image, self.rect)
         else:
             pygame.draw.rect(screen, self.color, self.rect)
