@@ -5,13 +5,32 @@ from seat import Seat
 from player import Player
 from ai_agent import AIAgent
 import time
-from math import dist
+from math import dist, hypot
 
-def find_furthest_seated_ai(ai_agents, player_rect):
+def get_ai_to_leave(ai_agents, player_rect):
+    px, py = player_rect.center
+
+    wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
+    if not wandering_ais:
+        return None
+
+    avg_x = sum(ai.rect.centerx for ai in wandering_ais) / len(wandering_ais)
+    avg_y = sum(ai.rect.centery for ai in wandering_ais) / len(wandering_ais)
+
+    mid_x = (px + avg_x) / 2
+    mid_y = (py + avg_y) / 2
+
     seated_ais = [ai for ai in ai_agents if ai.state == "seated"]
     if not seated_ais:
         return None
-    return max(seated_ais, key=lambda ai: dist(ai.rect.center, player_rect.center))
+
+    def dist_to_mid(ai):
+        dx = ai.rect.centerx - mid_x
+        dy = ai.rect.centery - mid_y
+        return hypot(dx, dy)
+
+    return min(seated_ais, key=dist_to_mid)
+
 
 
 pygame.init()
@@ -86,9 +105,9 @@ while running:
 
     if len(empty_seats) == 0:
         if current_time - last_despawn_time >= 5:
-            ai_to_remove = find_furthest_seated_ai(ai_agents, player.rect)
-            if ai_to_remove:
-                ai_to_remove.despawn(screen.get_width(), screen.get_height())
+            ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
+            if ai_to_leave:
+                ai_to_leave.despawn(screen.get_width(), screen.get_height())
             last_despawn_time = current_time
     else:
         last_despawn_time = current_time

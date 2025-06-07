@@ -94,7 +94,6 @@ class AIAgent:
             return
 
         if self.state == "wandering":
-            # ── ① 충돌 외에 랜덤으로 방향 리셋
             if random.random() < 0.01:
                 self.direction = random.choice(self.directions)
 
@@ -109,7 +108,6 @@ class AIAgent:
                 dy = self.speed
 
             next_rect = self.rect.move(dx, dy)
-            # ── ② 경계·장애물 충돌 시 좌/우 회전
             if (next_rect.left < 0 or next_rect.right > screen_width or
                 next_rect.top < 0 or next_rect.bottom > screen_height or
                 any(next_rect.colliderect(o) for o in obstacles if o != self.rect)):
