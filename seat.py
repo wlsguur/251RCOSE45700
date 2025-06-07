@@ -9,6 +9,7 @@ class Seat(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.occupied = False
+        self.targeted = False
         self.spawn_pos = spawn_pos  # (x, y) tuple
         self.exit_path = None
 

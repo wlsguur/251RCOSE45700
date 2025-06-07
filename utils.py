@@ -1,6 +1,7 @@
 from math import hypot
 from collections import deque
 import pygame
+import random
 
 def get_ai_to_leave(ai_agents, player_rect):
     px, py = player_rect.center
@@ -26,7 +27,7 @@ def get_ai_to_leave(ai_agents, player_rect):
 
     return min(seated_ais, key=dist_to_mid)
 
-def find_path_bfs(start, goal, obstacles, screen_width=800, screen_height=600, step=1):
+def find_path_bfs(start, goal, obstacles, screen_width=800, screen_height=600, step=2):
     """
     start: (x, y) 튜플 (시작점 중심 좌표)
     goal: (x, y) 튜플 (도착점 중심 좌표)
@@ -69,3 +70,13 @@ def find_path_bfs(start, goal, obstacles, screen_width=800, screen_height=600, s
 
 def euclidean_dist(p1, p2):
     return hypot(p1[0] - p2[0], p1[1] - p2[1])
+
+def ai_to_sit(empty_seat, ai_agents, obstacles, screen_size=(800, 600)):
+    wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
+
+    closest_ai = min(
+        wandering_ais, 
+        key=lambda ai: euclidean_dist(ai.rect.center, empty_seat.rect.center)
+    )
+
+    closest_ai.go_to_seat(empty_seat, obstacles, screen_size)

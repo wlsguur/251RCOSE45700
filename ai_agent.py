@@ -40,10 +40,12 @@ class AIAgent:
     def go_to_seat(self, seat, obstacles, screen_size=(800, 600)):
         self.state = "going_to_seat"
         self.target_seat = seat
-        self.target_seat.occupied = True  # 예약
-        self.path = find_path_bfs(self.rect.center, seat.rect.center, obstacles,
-                                  screen_width=screen_size[0], screen_height=screen_size[1])
+        seat.targeted = True
+        obstacles = [o for o in obstacles if not self.rect.colliderect(o)]
+        self.path = find_path_bfs(self.rect.center, seat.spawn_pos, obstacles,
+                                  screen_width=screen_size[0], screen_height=screen_size[1], step=4)
         self.path_index = 0
+        print(f"AI {self.rect.topleft} going to seat at {seat.rect.topleft}, path: {self.path}")
 
     def despawn(self):
         self.state = "leaving"
@@ -114,6 +116,7 @@ class AIAgent:
                 if self.state == "going_to_seat":
                     self.state = "seated"
                     self.rect.center = self.target_seat.rect.center
+                    self.target_seat.occupied = True
                 elif self.state == "leaving":
                     self.offscreen = True
             return

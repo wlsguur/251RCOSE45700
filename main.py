@@ -5,7 +5,7 @@ from seat import Seat
 from player import Player
 from ai_agent import AIAgent
 import time
-from utils import get_ai_to_leave, find_path_bfs, euclidean_dist
+from utils import get_ai_to_leave, find_path_bfs, euclidean_dist, ai_to_sit
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
@@ -54,7 +54,6 @@ for seat in all_seats:
     static_obstacles = [obstacle for obstacle in static_obstacles if not seat.rect.colliderect(obstacle)]
     path = find_path_bfs((x, y), target, static_obstacles, screen_width, screen_height)
     seat.exit_path = path
-    print(f"Seat at {seat.rect.topleft} exit path: {path}")
 
 # 모든 좌석에 AI 배치
 ai_agents = []
@@ -94,7 +93,8 @@ while running:
 
     for ai in ai_agents:
         obstacles.append(ai.rect)
-    
+
+    # create empty seat periodically
     empty_seats = [seat for seat in all_seats if not seat.occupied]
 
     current_time = time.time()
@@ -102,12 +102,14 @@ while running:
     if len(empty_seats) == 0:
         if current_time - last_despawn_time >= 5:
             ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
-            if ai_to_leave:
-                ai_to_leave.despawn() #(obstacles, screen.get_width(), screen.get_height())
+            ai_to_leave.despawn()
             last_despawn_time = current_time
     else:
         last_despawn_time = current_time
-
+    
+    if empty_seats and not empty_seats[0].targeted:
+        ai_to_sit(empty_seats[0], ai_agents, obstacles, screen_size=(screen.get_width(), screen.get_height()))
+    
     # input 처리 시 obstacles 전달
     for ai in ai_agents:
         ai.update(player.rect, obstacles, screen.get_width(), screen.get_height())
