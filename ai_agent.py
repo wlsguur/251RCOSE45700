@@ -45,30 +45,41 @@ class AIAgent:
                                   screen_width=screen_size[0], screen_height=screen_size[1])
         self.path_index = 0
 
-    def despawn(self, obstacles, screen_width=800, screen_height=600):
+    # def despawn(self, obstacles, screen_width=800, screen_height=600):
+    #     self.state = "leaving"
+    #     self.target_seat.leave()
+    #     self.target_seat = None
+
+    #     x, y = self.rect.center
+
+    #     margin = 10
+    #     targets = [
+    #         (margin, y),
+    #         (screen_width - margin, y),
+    #         (x, margin),
+    #         (x, screen_height - margin)
+    #     ]
+    #     target = min(targets, key=lambda p: euclidean_dist((x, y), p))
+    #     obstacles = [ob for ob in obstacles if not self.rect.colliderect(ob)]
+    #     path = find_path_bfs(self.rect.center, target, obstacles, 
+    #                          screen_width=screen_width, screen_height=screen_height)
+
+    #     if path:
+    #         self.path = path
+    #         self.path_index = 0
+    #     else:
+    #         self.offscreen = True
+
+    def despawn(self):
         self.state = "leaving"
-        self.target_seat.leave()
-        self.target_seat = None
-
-        x, y = self.rect.center
-
-        margin = 10
-        targets = [
-            (margin, y),
-            (screen_width - margin, y),
-            (x, margin),
-            (x, screen_height - margin)
-        ]
-        target = min(targets, key=lambda p: euclidean_dist((x, y), p))
-        obstacles = [ob for ob in obstacles if not self.rect.colliderect(ob)]
-        path = find_path_bfs(self.rect.center, target, obstacles, 
-                             screen_width=screen_width, screen_height=screen_height)
-
-        if path:
-            self.path = path
+        if self.target_seat:
+            self.path = self.target_seat.exit_path[:]  # 경로 복사
             self.path_index = 0
+            self.target_seat.leave()
+            self.target_seat = None
         else:
-            self.offscreen = True
+            self.offscreen = True  # 좌석 정보 없을 경우 안전장치
+
 
     def turn_left_or_right(self):
         turn_map = {

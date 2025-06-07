@@ -10,6 +10,7 @@ class Seat(pygame.sprite.Sprite):
 
         self.occupied = False
         self.spawn_pos = spawn_pos  # (x, y) tuple
+        self.exit_path = None
 
         # 점유 상태일 때 깔아 줄 반투명 오버레이
         self._overlay = pygame.Surface((width, height), pygame.SRCALPHA)

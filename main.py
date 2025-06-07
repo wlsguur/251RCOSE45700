@@ -5,7 +5,7 @@ from seat import Seat
 from player import Player
 from ai_agent import AIAgent
 import time
-from utils import get_ai_to_leave
+from utils import get_ai_to_leave, find_path_bfs, euclidean_dist
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
@@ -31,6 +31,30 @@ for x, y in positions:
 all_seats = []
 for desk in desks:
     all_seats.extend(desk.seats)
+
+# Find exit paths for each seat
+static_obstacles = [desk.rect for desk in desks]
+for desk in desks:
+    for seat in desk.seats:
+        static_obstacles.append(seat.rect)
+
+screen_width, screen_height = screen.get_width(), screen.get_height()
+margin = 10
+
+for seat in all_seats:
+    x, y = seat.rect.center
+    targets = [
+        (margin, y),
+        (screen_width - margin, y),
+        (x, margin),
+        (x, screen_height - margin)
+    ]
+
+    target = min(targets, key=lambda p: euclidean_dist((x, y), p))
+    static_obstacles = [obstacle for obstacle in static_obstacles if not seat.rect.colliderect(obstacle)]
+    path = find_path_bfs((x, y), target, static_obstacles, screen_width, screen_height)
+    seat.exit_path = path
+    print(f"Seat at {seat.rect.topleft} exit path: {path}")
 
 # 모든 좌석에 AI 배치
 ai_agents = []
@@ -79,7 +103,7 @@ while running:
         if current_time - last_despawn_time >= 5:
             ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
             if ai_to_leave:
-                ai_to_leave.despawn(obstacles, screen.get_width(), screen.get_height())
+                ai_to_leave.despawn() #(obstacles, screen.get_width(), screen.get_height())
             last_despawn_time = current_time
     else:
         last_despawn_time = current_time
