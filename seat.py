@@ -30,3 +30,4 @@ class Seat(pygame.sprite.Sprite):
         
     def leave(self):
         self.occupied = False
+        self.targeted = False
