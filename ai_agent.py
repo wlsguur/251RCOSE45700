@@ -153,9 +153,9 @@ def create_wandering_ai(num_ais, ai_img_path, obstacles, screen_size=(800, 600),
                 y = random.randint(0, height - ai_size)
             # x, y = topleft corner of the AI rect
             ai = AIAgent(x, y, image_path=ai_img_path)
-            if ai.rect.collidelist(obstacles) == -1:
+            if ai.rect.collidelist(obstacles) == -1 and ai.rect.collidelist(ai_agents) == -1:
                 break
-        print(f"Created wandering AI at ({x}, {y}), edge: {edge}, ai center: {ai.rect.center}")
+        
         ai.set_wandering()
         ai_agents.append(ai)
 
