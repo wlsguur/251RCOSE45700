@@ -80,7 +80,7 @@ font = pygame.font.SysFont(None, 24)
 
 # Set dsppawn time for AI agents
 Lambda = 1/5
-time_gap = 4 + np.random.exponential(scale=1 / Lambda)
+time_gap = 3 + np.random.exponential(scale=1 / Lambda)
 next_despawn_time = time.time() + time_gap
 
 # Set game over time
@@ -116,6 +116,7 @@ while running:
             last_heart_loss_time = current_time
             if hearts <= 0:
                 game_over = True
+                running = False
 
 
 
