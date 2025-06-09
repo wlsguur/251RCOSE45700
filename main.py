@@ -5,6 +5,7 @@ from seat import Seat
 from player import Player
 from ai_agent import AIAgent, create_wandering_ai
 import time
+import numpy as np
 from utils import get_ai_to_leave, find_path_bfs, euclidean_dist, ai_to_sit
 
 player_img_path = "asset/img/boy_player.png"
@@ -72,7 +73,10 @@ ai_agents.extend(wandering_ai)
 running = True
 font = pygame.font.SysFont(None, 24)
 
-last_despawn_time = time.time()
+# Set dsppawn time for AI agents
+Lambda = 1/5
+time_gap = 4 + np.random.exponential(scale=1 / Lambda)
+next_despawn_time = time.time() + time_gap
 
 while running:
     screen.fill((30, 30, 30))
@@ -90,20 +94,22 @@ while running:
 
     # create empty seat periodically
     empty_seats = [seat for seat in all_seats if not seat.occupied]
-
     current_time = time.time()
 
     if len(empty_seats) == 0:
         wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
         if len(wandering_ais) < 3:
-            ai_agents.extend(create_wandering_ai(1, ai_img_path, obstacles + [player.rect], screen_size=(screen.get_width(), screen.get_height())))
-        if current_time - last_despawn_time >= 5:
+            ai_agents.extend(create_wandering_ai(
+                1, ai_img_path, obstacles + [player.rect],
+                screen_size=(screen.get_width(), screen.get_height())
+            ))
+
+        if current_time >= next_despawn_time:
             ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
             if ai_to_leave:
                 ai_to_leave.despawn()
-                last_despawn_time = current_time
-    else:
-        last_despawn_time = current_time
+            next_despawn_time = current_time + np.random.exponential(scale=1 / Lambda)
+
     
     if empty_seats and not empty_seats[0].targeted:
         ai_to_sit(empty_seats[0], ai_agents, obstacles, screen_size=(screen.get_width(), screen.get_height()))
