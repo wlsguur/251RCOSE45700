@@ -3,16 +3,19 @@ import random
 from desk import Desk
 from seat import Seat
 from player import Player
-from ai_agent import AIAgent
+from ai_agent import AIAgent, create_wandering_ai
 import time
 from utils import get_ai_to_leave, find_path_bfs, euclidean_dist, ai_to_sit
+
+player_img_path = "asset/img/boy_player.png"
+ai_img_path = "asset/img/ai_agent.png"
 
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("ToHak")
 clock = pygame.time.Clock()
 
-player = Player(400, 300,width=40, height=40, image_path="asset/img/boy_player.png")
+player = Player(400, 300,width=40, height=40, image_path=player_img_path)
 
 desks = []
 desk_w, desk_h = 230, 110
@@ -52,28 +55,19 @@ for seat in all_seats:
 
     target = min(targets, key=lambda p: euclidean_dist((x, y), p))
     static_obstacles = [obstacle for obstacle in static_obstacles if not seat.rect.colliderect(obstacle)]
-    path = find_path_bfs((x, y), target, static_obstacles, screen_width, screen_height)
+    path = find_path_bfs((x, y), target, static_obstacles, screen_width, screen_height, agent_size=seat.rect.width, step=2)
     seat.exit_path = path
 
 # 모든 좌석에 AI 배치
 ai_agents = []
 for seat in all_seats:
-    ai = AIAgent(seat.rect.x, seat.rect.y, image_path='asset/img/ai_agent.png')
+    ai = AIAgent(seat.rect.x, seat.rect.y, image_path=ai_img_path)
     ai.set_seated(seat)
     ai_agents.append(ai)
 
 # wandering AI 3명 추가
-wandering_ai_spawn_zone = [(20, 50), (300, 30), (400, 100)]
-for x, y in wandering_ai_spawn_zone:
-    ai = AIAgent(x, y, image_path='asset/img/ai_agent.png')
-    ai.set_wandering()
-    ai_agents.append(ai)
-
-# 장애물 목록
-obstacles = [desk.rect for desk in desks]
-for desk in desks:
-    for seat in desk.seats:
-        obstacles.append(seat.rect)
+wandering_ai = create_wandering_ai(3, ai_img_path, static_obstacles + [player.rect], screen_size=(screen_width, screen_height))
+ai_agents.extend(wandering_ai)
 
 running = True
 font = pygame.font.SysFont(None, 24)
@@ -100,10 +94,14 @@ while running:
     current_time = time.time()
 
     if len(empty_seats) == 0:
+        wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
+        if len(wandering_ais) < 3:
+            ai_agents.extend(create_wandering_ai(1, ai_img_path, obstacles + [player.rect], screen_size=(screen.get_width(), screen.get_height())))
         if current_time - last_despawn_time >= 5:
             ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
-            ai_to_leave.despawn()
-            last_despawn_time = current_time
+            if ai_to_leave:
+                ai_to_leave.despawn()
+                last_despawn_time = current_time
     else:
         last_despawn_time = current_time
     

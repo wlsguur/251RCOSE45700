@@ -1,7 +1,6 @@
 from math import hypot
 from collections import deque
 import pygame
-import random
 
 def get_ai_to_leave(ai_agents, player_rect):
     px, py = player_rect.center
@@ -27,20 +26,23 @@ def get_ai_to_leave(ai_agents, player_rect):
 
     return min(seated_ais, key=dist_to_mid)
 
-def find_path_bfs(start, goal, obstacles, screen_width=800, screen_height=600, step=2):
+def find_path_bfs(start, goal, obstacles, screen_width=800, screen_height=600, step=2, agent_size=30):
     """
     start: (x, y) 튜플 (시작점 중심 좌표)
     goal: (x, y) 튜플 (도착점 중심 좌표)
     obstacles: pygame.Rect 리스트
-    step: 이동 단위 (작게 할수록 세밀, 크게 할수록 성능↑)
+    step: 이동 단위
+    agent_size: 캐릭터 크기 (기본값 30)
     return: [(x1, y1), (x2, y2), ...] 식의 경로 리스트 또는 None
     """
     
+    half = agent_size // 2
+
     def is_blocked(x, y):
-        point_rect = pygame.Rect(x, y, step, step)
+        agent_rect = pygame.Rect(x - half, y - half, agent_size, agent_size)
         if not (0 <= x < screen_width and 0 <= y < screen_height):
             return True
-        return any(point_rect.colliderect(ob) for ob in obstacles)
+        return any(agent_rect.colliderect(ob) for ob in obstacles)
 
     start = (round(start[0] / step) * step, round(start[1] / step) * step)
     goal = (round(goal[0] / step) * step, round(goal[1] / step) * step)
