@@ -13,7 +13,7 @@ class AIAgent:
             self.image = None
             self.color = color
 
-        self.rect = self.image.get_rect(center=(x, y)) if self.image else pygame.Rect(x, y, width, height)
+        self.rect = self.image.get_rect(topleft=(x, y)) if self.image else pygame.Rect(x, y, width, height)
 
         self.state = "wandering"  # wandering, going_to_seat, seated, leaving
         self.speed = 2
@@ -131,14 +131,32 @@ class AIAgent:
         else:
             pygame.draw.rect(screen, self.color, self.rect)
 
-def create_wandering_ai(num_ais, ai_img_path, obstacles, screen_size=(800, 600)):
+def create_wandering_ai(num_ais, ai_img_path, obstacles, screen_size=(800, 600), ai_size=30):
     ai_agents = []
+    width, height = screen_size
+
     for _ in range(num_ais):
-        x, y = random.randint(20, screen_size[0] - 20), random.randint(20, screen_size[1] - 20)
-        ai = AIAgent(x, y, image_path=ai_img_path)
-        while ai.rect.collidelist(obstacles) != -1:
-            x, y = random.randint(20, screen_size[0] - 20), random.randint(20, screen_size[1] - 20)
-            ai.rect.topleft = (x, y)
+        while True:
+            edge = random.choice(['top', 'bottom', 'left', 'right'])
+            # spawn at a random screen edge
+            if edge == 'top':
+                x = random.randint(0, width - ai_size)
+                y = 0
+            elif edge == 'bottom':
+                x = random.randint(0, width - ai_size)
+                y = height - ai_size
+            elif edge == 'left':
+                x = 0
+                y = random.randint(0, height - ai_size)
+            elif edge == 'right':
+                x = width - ai_size
+                y = random.randint(0, height - ai_size)
+            # x, y = topleft corner of the AI rect
+            ai = AIAgent(x, y, image_path=ai_img_path)
+            if ai.rect.collidelist(obstacles) == -1:
+                break
+        print(f"Created wandering AI at ({x}, {y}), edge: {edge}, ai center: {ai.rect.center}")
         ai.set_wandering()
         ai_agents.append(ai)
+
     return ai_agents
