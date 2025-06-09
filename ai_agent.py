@@ -43,9 +43,10 @@ class AIAgent:
         seat.targeted = True
         obstacles = [o for o in obstacles if not self.rect.colliderect(o)]
         self.path = find_path_bfs(self.rect.center, seat.spawn_pos, obstacles,
-                                  screen_width=screen_size[0], screen_height=screen_size[1], step=4)
+                                  screen_width=screen_size[0], screen_height=screen_size[1],
+                                  step=4, agent_size=self.rect.width)
         self.path_index = 0
-        print(f"AI {self.rect.topleft} going to seat at {seat.rect.topleft}, path: {self.path}")
+        # print(f"AI {self.rect.topleft} going to seat at {seat.rect.topleft}, path: {self.path}")
 
     def despawn(self):
         self.state = "leaving"
@@ -129,3 +130,15 @@ class AIAgent:
             screen.blit(self.image, self.rect)
         else:
             pygame.draw.rect(screen, self.color, self.rect)
+
+def create_wandering_ai(num_ais, ai_img_path, obstacles, screen_size=(800, 600)):
+    ai_agents = []
+    for _ in range(num_ais):
+        x, y = random.randint(20, screen_size[0] - 20), random.randint(20, screen_size[1] - 20)
+        ai = AIAgent(x, y, image_path=ai_img_path)
+        while ai.rect.collidelist(obstacles) != -1:
+            x, y = random.randint(20, screen_size[0] - 20), random.randint(20, screen_size[1] - 20)
+            ai.rect.topleft = (x, y)
+        ai.set_wandering()
+        ai_agents.append(ai)
+    return ai_agents
