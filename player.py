@@ -22,6 +22,7 @@ class Player:
         # NOTE: 달리기 애니메이션을 위해서는 'asset/img/player/run' 폴더에 여러 이미지 파일이 필요합니다.
         # NOTE: 지금은 임시로 'boy_player.png'만 사용합니다.
         run_path = 'asset/img/player/run'
+        idle_path = 'asset/img/boy_player.png' # NOTE: 서있을 때의 이미지도 별도로 지정할 수 있습니다.
 
         self.run_frames = []
         if os.path.isdir(run_path):
@@ -35,8 +36,13 @@ class Player:
             player_img = pygame.image.load('asset/img/boy_player.png').convert_alpha()
             self.run_frames = [pygame.transform.scale(player_img, (width, height))]
 
-        # 서있을 때 프레임 -> 달리기 애니메이션의 첫번째 프레임 사용
-        self.idle_frames = [self.run_frames[0]]
+        # 서있을 때 프레임 (현재는 1개)
+        self.idle_frames = []
+        if os.path.exists(idle_path):
+            image = pygame.image.load(idle_path).convert_alpha()
+            self.idle_frames.append(pygame.transform.scale(image, (width, height)))
+        else:
+            self.idle_frames = self.run_frames # 서있을 때 이미지가 없으면 달리기 첫번째 이미지 사용
 
 
     def handle_input(self, obstacles, screen_width=800, screen_height=600):
