@@ -2,7 +2,7 @@ import pygame
 import os
 
 class Player:
-    def __init__(self, x, y, width=30, height=30, image_path='asset/img/boy_player.png', speed=4):
+    def __init__(self, x, y, width=30, height=30, speed=4):
         self.load_animations(width, height)
         self.image = self.idle_frames[0]
         
@@ -19,31 +19,23 @@ class Player:
         self.direction = 'right'
 
     def load_animations(self, width, height):
-        # NOTE: 달리기 애니메이션을 위해서는 'asset/img/player/run' 폴더에 여러 이미지 파일이 필요합니다.
-        # NOTE: 지금은 임시로 'boy_player.png'만 사용합니다.
+        # 달리기 애니메이션 프레임 로드
         run_path = 'asset/img/player/run'
-        idle_path = 'asset/img/boy_player.png' # NOTE: 서있을 때의 이미지도 별도로 지정할 수 있습니다.
 
         self.run_frames = []
-        if os.path.isdir(run_path):
+        if os.path.isdir(run_path) and os.listdir(run_path):
              for file_name in sorted(os.listdir(run_path)):
                 if file_name.endswith('.png'):
                     image = pygame.image.load(os.path.join(run_path, file_name)).convert_alpha()
                     self.run_frames.append(pygame.transform.scale(image, (width, height)))
-
+        
+        # 달리기 프레임이 없으면 기본 'boy_player.png' 이미지로 대체
         if not self.run_frames:
-            # 달리기 프레임이 없을 경우, 기본 이미지로 대체
             player_img = pygame.image.load('asset/img/boy_player.png').convert_alpha()
-            self.run_frames = [pygame.transform.scale(player_img, (width, height))]
+            self.run_frames.append(pygame.transform.scale(player_img, (width, height)))
 
-        # 서있을 때 프레임 (현재는 1개)
-        self.idle_frames = []
-        if os.path.exists(idle_path):
-            image = pygame.image.load(idle_path).convert_alpha()
-            self.idle_frames.append(pygame.transform.scale(image, (width, height)))
-        else:
-            self.idle_frames = self.run_frames # 서있을 때 이미지가 없으면 달리기 첫번째 이미지 사용
-
+        # 서있을 때 프레임은 항상 달리기 애니메이션의 첫번째 프레임으로 설정
+        self.idle_frames = [self.run_frames[0]]
 
     def handle_input(self, obstacles, screen_width=800, screen_height=600):
         keys = pygame.key.get_pressed()
