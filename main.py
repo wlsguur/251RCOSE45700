@@ -75,12 +75,12 @@ for seat in all_seats:
 # 모든 좌석에 AI 배치
 ai_agents = []
 for seat in all_seats:
-    ai = AIAgent(seat.rect.x, seat.rect.y, image_path=ai_img_path)
+    ai = AIAgent(seat.rect.x, seat.rect.y)
     ai.set_seated(seat)
     ai_agents.append(ai)
 
 # wandering AI 3명 추가
-wandering_ai = create_wandering_ai(3, ai_img_path, static_obstacles + [player.rect], screen_size=(screen_width, screen_height))
+wandering_ai = create_wandering_ai(3, static_obstacles + [player.rect], screen_size=(screen_width, screen_height))
 ai_agents.extend(wandering_ai)
 
 running = True
@@ -151,7 +151,7 @@ while running:
         wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
         if len(wandering_ais) < 3:
             ai_agents.extend(create_wandering_ai(
-                1, ai_img_path, obstacles + [player.rect],
+                1, obstacles + [player.rect],
                 screen_size=(screen_width, screen_height),
             ))
 
