@@ -17,7 +17,7 @@ screen = pygame.display.set_mode((800, 600 + UI_height))
 pygame.display.set_caption("ToHak")
 clock = pygame.time.Clock()
 
-player = Player(400, 300,width=40, height=40, image_path=player_img_path)
+player = Player(400, 300,width=40, height=40)
 ui_region = pygame.Rect(0, 600, 800, UI_height)
 
 # Create desks and seats
@@ -156,6 +156,7 @@ while running:
         ai.update(player.rect, obstacles, screen_width, screen_height)
 
     player.handle_input(obstacles, screen_width, screen_height)
+    player.update_animation()
 
     ai_agents = [ai for ai in ai_agents if not ai.offscreen]
 
