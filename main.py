@@ -7,11 +7,22 @@ from ai_agent import AIAgent, create_wandering_ai
 import time
 import numpy as np
 from utils import get_ai_to_leave, find_path_bfs, euclidean_dist, ai_to_sit
+import os
 
 player_img_path = "asset/img/boy_player.png"
 ai_img_path = "asset/img/ai_agent.png"
 
 pygame.init()
+pygame.mixer.init() # 사운드 시스템 초기화
+
+# 사운드 파일 경로 설정 및 로드
+sound_path = "asset/sound/"
+bgm = pygame.mixer.music.load(os.path.join(sound_path, "stranger-things.mp3"))
+sit_sound = pygame.mixer.Sound(os.path.join(sound_path, "sit.mp3"))
+game_over_sound = pygame.mixer.Sound(os.path.join(sound_path, "game_over.mp3"))
+
+pygame.mixer.music.play(-1) # 배경음악 무한반복 재생
+
 UI_height = 60
 screen = pygame.display.set_mode((800, 600 + UI_height))
 pygame.display.set_caption("ToHak")
@@ -116,6 +127,7 @@ while running:
             hearts -= 1
             last_heart_loss_time = current_time
             if hearts <= 0:
+                game_over_sound.play() # 게임 오버 사운드 재생
                 game_over = True
                 running = False
 
@@ -172,6 +184,7 @@ while running:
     # '앉기' 입력
     keys = pygame.key.get_pressed()
     if sit_target and keys[pygame.K_SPACE] and not player.seated:
+        sit_sound.play() # 앉기 사운드 재생
         player.sit(sit_target)
     
 
