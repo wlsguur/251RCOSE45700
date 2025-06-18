@@ -7,7 +7,6 @@ from ai_agent import AIAgent, create_wandering_ai
 import time
 import numpy as np
 from utils import get_ai_to_leave, find_path_bfs, euclidean_dist, ai_to_sit
-from network import Network
 
 player_img_path = "asset/img/boy_player.png"
 ai_img_path = "asset/img/ai_agent.png"
@@ -18,13 +17,7 @@ screen = pygame.display.set_mode((800, 600 + UI_height))
 pygame.display.set_caption("ToHak")
 clock = pygame.time.Clock()
 
-# 네트워크 연결
-n = Network()
-player_id = n.get_player_id()
-print(f"You are Player {player_id}")
-
 player = Player(400, 300,width=40, height=40)
-players = {} # 다른 플레이어들의 정보를 저장할 딕셔너리
 
 ui_region = pygame.Rect(0, 600, 800, UI_height)
 
@@ -93,7 +86,7 @@ next_despawn_time = time.time() + time_gap
 
 # Set game over time
 start_time = time.time()
-heart_img = pygame.image.load("asset/img/stool.png").convert_alpha()
+heart_img = pygame.image.load("asset/img/heart.png").convert_alpha()
 heart_img = pygame.transform.scale(heart_img, (30, 30))
 
 max_hearts = 8
@@ -102,14 +95,6 @@ last_heart_loss_time = time.time()
 heart_loss_interval = 4  # 초 단위로 하트 하나 감소
 
 game_win = False
-
-def draw_players(screen, players_data, local_player_id):
-    for p_id, p_data in players_data.items():
-        if p_id != local_player_id: # 자기 자신은 별도로 그리므로 제외
-            # 간단하게 다른 플레이어를 사각형으로 표시
-            # 추후 Player 객체처럼 이미지로 변경 가능
-            p_rect = pygame.Rect(p_data['x'], p_data['y'], 40, 40)
-            pygame.draw.rect(screen, (255, 0, 0), p_rect)
 
 # Game loop
 while running:
@@ -189,15 +174,6 @@ while running:
     if sit_target and keys[pygame.K_SPACE] and not player.seated:
         player.sit(sit_target)
     
-    # 서버로 내 상태 보내고 다른 플레이어 정보 받기
-    player_data = {
-        'x': player.rect.x,
-        'y': player.rect.y,
-        'direction': player.direction,
-        'is_moving': player.is_moving,
-        'seated': player.seated
-    }
-    other_players = n.send(player_data)
 
     # Draw objects and UI
     pygame.draw.rect(screen, (50, 50, 50), ui_region)
@@ -206,10 +182,6 @@ while running:
     for ai in ai_agents:
         ai.draw(screen)
     
-    # 다른 플레이어들 그리기
-    if other_players:
-        draw_players(screen, other_players, player_id)
-
     player.draw(screen)
     for i in range(hearts):
         screen.blit(heart_img, (20 + i * 35, ui_region.top + 10))
