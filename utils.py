@@ -73,7 +73,7 @@ def find_path_bfs(start, goal, obstacles, screen_width=800, screen_height=600, s
 def euclidean_dist(p1, p2):
     return hypot(p1[0] - p2[0], p1[1] - p2[1])
 
-def ai_to_sit(empty_seat, ai_agents, obstacles, screen_size=(800, 600)):
+def ai_to_sit(empty_seat, ai_agents, obstacles, screen_size=(800, 600), ai_step=4):
     wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
 
     closest_ai = min(
@@ -81,4 +81,4 @@ def ai_to_sit(empty_seat, ai_agents, obstacles, screen_size=(800, 600)):
         key=lambda ai: euclidean_dist(ai.rect.center, empty_seat.rect.center)
     )
 
-    closest_ai.go_to_seat(empty_seat, obstacles, screen_size)
+    closest_ai.go_to_seat(empty_seat, obstacles, screen_size, step=ai_step)

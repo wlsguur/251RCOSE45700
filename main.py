@@ -97,66 +97,112 @@ while running:
 
         if mouse_clicked:
             if start_button_rect.collidepoint(pygame.mouse.get_pos()):
-                # --- Initialize Game ---
-                player = Player(400, 300, width=40, height=40)
-                ui_region = pygame.Rect(0, 600, 800, UI_height)
+                game_state = "DIFICAULTY_SELECTION"
                 
-                desks = []
-                desk_w, desk_h = 230, 110
-                margin_x, margin_y = 90, 100
-                positions = [
-                    (margin_x, margin_y), (800 - margin_x - desk_w, margin_y),
-                    (margin_x, 600 - margin_y - desk_h), (800 - margin_x - desk_w, 600 - margin_y - desk_h)
-                ]
-                for x, y in positions:
-                    desks.append(Desk(x, y, desk_w, desk_h))
-                
-                all_seats = []
-                for desk in desks:
-                    all_seats.extend(desk.seats)
-
-                static_obstacles = [desk.rect for desk in desks]
-                for desk in desks:
-                    for seat in desk.seats:
-                        static_obstacles.append(seat.rect)
-                static_obstacles.append(ui_region)
-
-                screen_width, screen_height = screen.get_width(), (screen.get_height() - UI_height)
-                ai_size = 30
-                for seat in all_seats:
-                    x, y = seat.rect.center
-                    targets = [(ai_size, y), (screen_width - ai_size, y), (x, ai_size), (x, screen_height - ai_size)]
-                    target = min(targets, key=lambda p: euclidean_dist((x, y), p))
-                    path_obstacles = [obstacle for obstacle in static_obstacles if not seat.rect.colliderect(obstacle)]
-                    path = find_path_bfs((x, y), target, path_obstacles, screen_width, screen_height, agent_size=seat.rect.width, step=2)
-                    seat.exit_path = path
-                    assert path is not None, f"Path not found for seat at {seat.rect.topleft} to target {target}"
-
-                ai_agents = []
-                for seat in all_seats:
-                    ai = AIAgent(seat.rect.x, seat.rect.y)
-                    ai.set_seated(seat)
-                    ai_agents.append(ai)
-                
-                wandering_ai = create_wandering_ai(3, static_obstacles + [player.rect], screen_size=(screen_width, screen_height))
-                ai_agents.extend(wandering_ai)
-
-                Lambda = 1/5
-                time_gap = 3 + np.random.exponential(scale=1 / Lambda)
-                next_despawn_time = time.time() + time_gap
-
-                start_time = time.time()
-                heart_img = pygame.image.load("asset/img/heart.png").convert_alpha()
-                heart_img = pygame.transform.scale(heart_img, (30, 30))
-                max_hearts = 8
-                hearts = max_hearts
-                last_heart_loss_time = time.time()
-                heart_loss_interval = 4
-                
-                play_bgm()
-                game_state = "PLAYING"
             elif how_to_play_button_rect.collidepoint(pygame.mouse.get_pos()):
                 game_state = "HOW_TO_PLAY"
+
+    elif game_state == "DIFICAULTY_SELECTION":
+        if background_image:
+            screen.blit(background_image, (0, 0))
+        else:
+            screen.fill(DARK_GRAY)
+
+        draw_text("Select Difficulty", title_font, WHITE, screen, 400, 200, center=True)
+
+        easy_button = pygame.Rect(screen.get_width() / 2 - 125, 300, 250, 50)
+        normal_button = pygame.Rect(screen.get_width() / 2 - 125, 370, 250, 50)
+        hard_button = pygame.Rect(screen.get_width() / 2 - 125, 440, 250, 50)
+
+        pygame.draw.rect(screen, GREEN, easy_button)
+        pygame.draw.rect(screen, GREEN, normal_button)
+        pygame.draw.rect(screen, GREEN, hard_button)
+
+        draw_text("EASY", button_font, WHITE, screen, 400, 325, center=True)
+        draw_text("NORMAL", button_font, WHITE, screen, 400, 395, center=True)
+        draw_text("HARD", button_font, WHITE, screen, 400, 465, center=True)
+
+        if mouse_clicked:
+            mouse_pos = pygame.mouse.get_pos()
+            if easy_button.collidepoint(mouse_pos):
+                selected_difficulty = "EASY"
+                Lambda = 1 / 5
+                heart_loss_interval = 5
+                initial_wandering = 3
+                ai_step = 3
+            elif normal_button.collidepoint(mouse_pos):
+                selected_difficulty = "NORMAL"
+                Lambda = 1 / 5
+                heart_loss_interval = 4
+                initial_wandering = 4
+                ai_step = 4
+            elif hard_button.collidepoint(mouse_pos):
+                selected_difficulty = "HARD"
+                Lambda = 1 / 5
+                heart_loss_interval = 3
+                initial_wandering = 5
+                ai_step = 5
+            game_state = "PLAYING_SETUP"
+    
+    elif game_state == "PLAYING_SETUP":
+        # --- Initialize Game ---
+        player = Player(400, 300, width=40, height=40)
+        ui_region = pygame.Rect(0, 600, 800, UI_height)
+        
+        desks = []
+        desk_w, desk_h = 230, 110
+        margin_x, margin_y = 90, 100
+        positions = [
+            (margin_x, margin_y), (800 - margin_x - desk_w, margin_y),
+            (margin_x, 600 - margin_y - desk_h), (800 - margin_x - desk_w, 600 - margin_y - desk_h)
+        ]
+        for x, y in positions:
+            desks.append(Desk(x, y, desk_w, desk_h))
+        
+        all_seats = []
+        for desk in desks:
+            all_seats.extend(desk.seats)
+
+        static_obstacles = [desk.rect for desk in desks]
+        for desk in desks:
+            for seat in desk.seats:
+                static_obstacles.append(seat.rect)
+        static_obstacles.append(ui_region)
+
+        screen_width, screen_height = screen.get_width(), (screen.get_height() - UI_height)
+        ai_size = 30
+        for seat in all_seats:
+            x, y = seat.rect.center
+            targets = [(ai_size, y), (screen_width - ai_size, y), (x, ai_size), (x, screen_height - ai_size)]
+            target = min(targets, key=lambda p: euclidean_dist((x, y), p))
+            path_obstacles = [obstacle for obstacle in static_obstacles if not seat.rect.colliderect(obstacle)]
+            path = find_path_bfs((x, y), target, path_obstacles, screen_width, screen_height, agent_size=seat.rect.width, step=2)
+            seat.exit_path = path
+            assert path is not None, f"Path not found for seat at {seat.rect.topleft} to target {target}"
+
+        ai_agents = []
+        for seat in all_seats:
+            ai = AIAgent(seat.rect.x, seat.rect.y)
+            ai.set_seated(seat)
+            ai_agents.append(ai)
+        
+        wandering_ai = create_wandering_ai(initial_wandering, static_obstacles + [player.rect], screen_size=(screen_width, screen_height))
+        ai_agents.extend(wandering_ai)
+
+        Lambda = 1/5
+        time_gap = 3 + np.random.exponential(scale=1 / Lambda)
+        next_despawn_time = time.time() + time_gap
+
+        start_time = time.time()
+        heart_img = pygame.image.load("asset/img/heart.png").convert_alpha()
+        heart_img = pygame.transform.scale(heart_img, (30, 30))
+        max_hearts = 8
+        hearts = max_hearts
+        last_heart_loss_time = time.time()
+        # heart_loss_interval = 4
+        
+        play_bgm()
+        game_state = "PLAYING"
 
     elif game_state == "HOW_TO_PLAY":
         if background_image:
@@ -216,7 +262,7 @@ while running:
                     if ai_to_leave: ai_to_leave.despawn()
                     next_despawn_time = time.time() + np.random.exponential(scale=1 / Lambda)
             elif not empty_seats[0].targeted:
-                ai_to_sit(empty_seats[0], ai_agents, obstacles, screen_size=(screen_width, screen_height))
+                ai_to_sit(empty_seats[0], ai_agents, obstacles, screen_size=(screen_width, screen_height), ai_step=ai_step)
             
             for ai in ai_agents:
                 ai.update(player.rect, obstacles, screen_width, screen_height)
