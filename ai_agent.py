@@ -4,13 +4,13 @@ import os
 from utils import find_path_bfs, euclidean_dist
 
 class AIAgent:
-    def __init__(self, x, y, width=30, height=30):
+    def __init__(self, x, y, width=30, height=30, speed=2):
         self.load_animations(width, height)
         self.image = self.idle_frames[0]
         self.rect = self.image.get_rect(topleft=(x, y))
 
         self.state = "wandering"  # wandering, going_to_seat, seated, leaving
-        self.speed = 2
+        self.speed = speed
         self.target_seat = None
         self.paused_due_to_collision = False
 
@@ -171,7 +171,7 @@ class AIAgent:
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-def create_wandering_ai(num_ais, obstacles, screen_size=(800, 600), ai_size=30):
+def create_wandering_ai(num_ais, obstacles, screen_size=(800, 600), ai_size=30, speed=2):
     ai_agents = []
     width, height = screen_size
 
@@ -192,7 +192,7 @@ def create_wandering_ai(num_ais, obstacles, screen_size=(800, 600), ai_size=30):
                 x = width - ai_size
                 y = random.randint(0, height - ai_size)
             # x, y = topleft corner of the AI rect
-            ai = AIAgent(x, y)
+            ai = AIAgent(x, y, speed=speed)
             if ai.rect.collidelist(obstacles) == -1 and ai.rect.collidelist(ai_agents) == -1:
                 break
         

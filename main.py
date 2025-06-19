@@ -130,18 +130,21 @@ while running:
                 heart_loss_interval = 5
                 initial_wandering = 3
                 ai_step = 3
+                ai_speed = 2
             elif normal_button.collidepoint(mouse_pos):
                 selected_difficulty = "NORMAL"
                 Lambda = 1 / 5
                 heart_loss_interval = 4
                 initial_wandering = 4
                 ai_step = 4
+                ai_speed = 3
             elif hard_button.collidepoint(mouse_pos):
                 selected_difficulty = "HARD"
                 Lambda = 1 / 5
                 heart_loss_interval = 3
                 initial_wandering = 5
                 ai_step = 5
+                ai_speed = 4
             game_state = "PLAYING_SETUP"
     
     elif game_state == "PLAYING_SETUP":
@@ -186,7 +189,7 @@ while running:
             ai.set_seated(seat)
             ai_agents.append(ai)
         
-        wandering_ai = create_wandering_ai(initial_wandering, static_obstacles + [player.rect], screen_size=(screen_width, screen_height))
+        wandering_ai = create_wandering_ai(initial_wandering, static_obstacles + [player.rect], screen_size=(screen_width, screen_height), speed=ai_speed)
         ai_agents.extend(wandering_ai)
 
         Lambda = 1/5
@@ -255,8 +258,8 @@ while running:
             empty_seats = [seat for seat in all_seats if not seat.occupied]
             if not empty_seats:
                 wandering_ais = [ai for ai in ai_agents if ai.state == "wandering"]
-                if len(wandering_ais) < 3:
-                    ai_agents.extend(create_wandering_ai(1, obstacles + [player.rect], screen_size=(screen_width, screen_height)))
+                if len(wandering_ais) < initial_wandering:
+                    ai_agents.extend(create_wandering_ai(1, obstacles + [player.rect], screen_size=(screen_width, screen_height), speed=ai_speed))
                 if time.time() >= next_despawn_time:
                     ai_to_leave = get_ai_to_leave(ai_agents, player.rect)
                     if ai_to_leave: ai_to_leave.despawn()
